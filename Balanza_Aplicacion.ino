@@ -49,7 +49,7 @@ void setup()
   Serial.println("Inicio de tara"); // Esta tara la hace sobre el peso inicial de la balanza y el peso del recipiente, eso se puede cambiar
   delay(1000);
   balanza.set_scale(); 
-  balanza.tare(50); // Se toman cien muestras, para calcular el proceso de tara (ajusta el cero de acuerdo al peso del recipiente)
+  balanza.tare(50); // proceso de tara (ajusta el cero de acuerdo al peso del recipiente)
   Serial.println("Fin de tara");
   delay(1000);
 
@@ -69,11 +69,10 @@ void setup()
 
 void loop()
 {
-  //Serial.println("Si desea dosificar líquido escriba 1 en el campo de texto");
   Serial.println("Ahora, ingrese los valores en la casilla correspondiente al setpoint requerido");
   masa_actual = medir_masa_actual(); // Esta función mide el peso con la escala obtenida directamente en este código
 
-  if(Serial.available()) // Revisa si el usuario introdujo un comando en la interfaz para dosificar
+  if(Serial.available()) // Revisa si el usuario introdujo un comando en la interfaz para algún setpoint
   {
     float valor = Serial.parseInt();
 //    palabra = Serial.read();
@@ -157,7 +156,7 @@ void control_p_motobomba(float masa_Inicial) // Para control proporcional
 {
   float referencia = (volumen_liquido_deseado*densidad_liquido) + masa_muestra;
   float error = referencia - masa_Inicial; // Error = referencia - actual
-  Serial.print("El error actual es: ");
+  Serial.print("El error actual del setpoint de líquido es: ");
   Serial.print(error);
   Serial.println(" g");
 
@@ -175,46 +174,9 @@ void control_p_motobomba(float masa_Inicial) // Para control proporcional
     Serial.print(",");
     Serial.println(liquido);
     
-    Serial.print("El error actual es: ");
+    Serial.print("El error actual del setpoint de líquido es: ");
     Serial.print(error);
     Serial.println(" g");
-  }
-  
-  analogWrite(motor_pin, 0);
-}
-
-
-void control_pi_motobomba(float masa_Inicial) // Para control proporcional
-{
-  float kp = 255/(volumen_liquido_deseado*densidad_liquido), ki = 0.5;
-  unsigned long currentTime, previousTime;
-  double elapsedTime;
-  double lastError, cumError;
-  float referencia = (volumen_liquido_deseado*densidad_liquido) + masa_muestra;
-  float error = referencia - masa_Inicial; // Error = referencia - actual
-  Serial.print("El error inicial es: ");
-  Serial.print(error);
-  Serial.println(" g");
-
-  while (error > 5) // Maneja una velocidad de la motobomba proporcional al error
-  {
-    currentTime = millis();                               // obtener el tiempo actual
-    elapsedTime = (double)(currentTime - previousTime);     // calcular el tiempo transcurrido
-    
-    masa_actual = medir_masa_actual();
-    error = referencia - masa_actual;
-    cumError += error * elapsedTime;   // calcular la integral del error
-    
-    Serial.print("El error actual es: ");
-    Serial.print(error);
-    Serial.println(" g");
-
-    vel_motobomba = kp*error + ki*cumError;     // calcular la salida del PI
- 
-    lastError = error;  // almacena error anterior
-    previousTime = currentTime; 
-    
-    analogWrite(motor_pin, vel_motobomba);
   }
   
   analogWrite(motor_pin, 0);
