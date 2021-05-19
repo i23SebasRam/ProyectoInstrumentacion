@@ -14,7 +14,7 @@
  * #t4,VALOR = RPMs del motor paso a paso
  */
 
-/* SETPOINTS
+/* SETPOINTS RECIBIDOS DE LA APP
  * L = setpoint de liquido
  * T = setpoint de temperatura
  * R = setpoint de RPMs
@@ -68,13 +68,13 @@ float masa_calibracion = 0; // MODIFICAR de acuerdo a la masa con la que está c
 float masa_muestra = 0; // MODIFICAR de acuerdo a lo que se pida de peso de muestra sólida que se va a tener en la balanza
 float masa_actual = 0; // variable para guardar peso actual medido en el sistema
 
-//// Variables para motobomba
+//// Variables para motobomba y liquido
 int vel_motobomba = 0; // variable para la velocidad de la moto bomba
 float liquido = 0;
 
 //// Variables para el sensor de temperatura
 float temperature = 0;                                    // Variable for storing temperature measurements
-float SetUpTemp = 25.0;                                   // Variable for storing the Setup Temperature of the system
+float SetUpTemp = 0;                                   // Variable for storing the Setup Temperature of the system
 int waitRelay = 0;                                        // Variable for storing status of waiting for the relay operation
 float temperatura_actual;
 
@@ -147,16 +147,16 @@ void setup()
 
   Serial.print("Escala calibrada: ");
   Serial.println(escala);
-  delay(1500);
+  delay(1000);
   
   Serial.println("SISTEMA LISTO PARA OPERAR");
-  delay(1000);
+  delay(2000);
 }
 
 
 void loop()
 {
-  Serial.println("Ahora, ingrese los valores en la casilla correspondiente al setpoint requerido");
+  Serial.println("Ahora, ingrese los setpoints requeridos");
   masa_actual = medir_masa_actual(); // mide la masa actual de la balanza
   temperatura_actual = medir_temperatura_actual(); // mide la temperatura actual del liquido
   control_onoff_temperatura(temperatura_actual); // realiza el control de temperatura con el relé
@@ -181,7 +181,7 @@ void loop()
     }
   }
 
-  if (ID == 'Q')
+  if (ID == 'Q') // cuando se recibe parado de emergencia desde la aplicación
   {
     parado_emergencia();
   }
@@ -189,28 +189,28 @@ void loop()
   else if (ID == 'L') // si se envía setpoint de líquido
   {
     masa_muestra = masa_actual;
-    Serial.print("Para al dosificación, se tiene actualmente una muestra medida de: ");
+    Serial.print("Para la dosificación, se tiene actualmente una muestra medida de: ");
     Serial.print(masa_muestra);
     Serial.println(" g");
         
     delay(2000);
-        
+    
     volumen_liquido_deseado = valor;
     Serial.print("Volumen de liquido deseado: ");
     Serial.print(volumen_liquido_deseado);
     Serial.println(" ml");
+    
     delay(2000);
-
+    
     Serial.println("Dosificando...");
-        
-    //control_onoff_motobomba(masa_actual); 
+    
     control_p_motobomba(masa_actual);
-       
+    
     Serial.println("Dosificación terminada");
   }
 
   else if (ID == 'T') // si se envía setpoint de temperatura
-  { 
+  {
     SetUpTemp = valor;
     Serial.println("Estableciendo nuevo setpoint de temperatura");
     Serial.println(valor);
@@ -267,7 +267,7 @@ void parado_emergencia()
 
 void control_onoff_temperatura(float temp_actual)
 {
-   if((temp_actual < SetUpTemp) && (waitRelay == 0))  // If the temp is less than the setup activate relay and story counting time
+   if((temp_actual < SetUpTemp) && (waitRelay == 0) && SetUpTemp != 0)  // If the temp is less than the setup activate relay and story counting time
    {
       digitalWrite(relay_pin, LOW);               // Activate Relay
       Serial.println("Activate Relay");
@@ -346,7 +346,7 @@ void control_p_motobomba(float masa_Inicial) // Para control proporcional
     vel_motobomba = map(abs(error), 0, volumen_liquido_deseado, 50, 255);
     analogWrite(motor_pin, vel_motobomba);
     
-    masa_actual = medir_masa_actual(); // medir_peso_actual();
+    masa_actual = medir_masa_actual();
     error = referencia - masa_actual;
 
     liquido = masa_actual - masa_Inicial;
@@ -366,7 +366,7 @@ void control_p_motobomba(float masa_Inicial) // Para control proporcional
 
 void calibracion(void) // Función para calibrar con 1 peso de referencia
 {
-  Serial.println("Por favor ingresar la masa con la que va a calibrar entre 1g y 950g");
+  Serial.println("Por favor ingresar la masa con la que va a calibrar entre 1g y 900g");
   delay(500);
   
   while (!(Serial.available()))
