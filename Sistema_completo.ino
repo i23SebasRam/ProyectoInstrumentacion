@@ -73,9 +73,9 @@ int vel_motobomba = 0; // variable para la velocidad de la moto bomba
 float liquido = 0;
 
 //// Variables para el sensor de temperatura
-float temperature = 0;                                    // Variable for storing temperature measurements
+float temperature = 0;                                 // Variable for storing temperature measurements
 float SetUpTemp = 0;                                   // Variable for storing the Setup Temperature of the system
-int waitRelay = 0;                                        // Variable for storing status of waiting for the relay operation
+int waitRelay = 0;                                     // Variable for storing status of waiting for the relay operation
 float temperatura_actual;
 
 //// Variables para motor paso a pas
@@ -212,11 +212,11 @@ void loop()
   else if (ID == 'T') // si se envía setpoint de temperatura
   {
     SetUpTemp = valor;
-    Serial.println("Estableciendo nuevo setpoint de temperatura");
+    Serial.println("Se estableció setpoint de temperatura en: ");
     Serial.println(valor);
   }
 
-  else if (ID == 'R') // si se fija el setpoint de RPMs
+  else if (ID == 'R') // si se envía setpoint de RPMs
   {
     stepper.setRPM(valor);
     RPM = valor;
@@ -261,7 +261,7 @@ void parado_emergencia()
   analogWrite(motor_pin, 0); // apaga motoboma
   stepper.disable(); // apaga el stepper
   digitalWrite(relay_pin, HIGH); // desactiva el calentador
-  delay(10000); // espera para desconectar o reiniciar el sistema
+  delay(60000); // espera para desconectar o reiniciar el sistema
 }
 
 
@@ -270,7 +270,6 @@ void control_onoff_temperatura(float temp_actual)
    if((temp_actual < SetUpTemp) && (waitRelay == 0) && SetUpTemp != 0)  // If the temp is less than the setup activate relay and story counting time
    {
       digitalWrite(relay_pin, LOW);               // Activate Relay
-      Serial.println("Activate Relay");
       // Activate timer
       Timer0 = millis(); 
       waitRelay = 1;
@@ -280,8 +279,6 @@ void control_onoff_temperatura(float temp_actual)
    if ((TimerRelay >= Timer0+(1000*TimeRelay)) && (waitRelay==1))  // if the time has concluded for the relay to be active
    {
       digitalWrite(relay_pin,HIGH);               // Deactivate Relay
-      Serial.print("Deactivate Relay, spent time (ms): ");
-      Serial.println(TimerRelay - Timer0);
       waitRelay = 0;
    }        
 }
@@ -298,7 +295,7 @@ float medir_temperatura_actual()
   } 
   else // The DS18B20 is not responding
   {
-    Serial.println("Device DS18B20 not found!");
+    Serial.println("Error con sensor de temperatura");
     delay(100);                         // wait a bit to see it working, remove after testing
     digitalWrite(relay_pin, HIGH);        // Turn off temperature as sensor is not responding
     temperature = 0;                      // Determine temperature as Zero to notify an error
@@ -316,7 +313,7 @@ float medir_masa_actual() // Función para medir masa con una sola escala calibr
 
   if (toma1 > 1000) // revisa que se esté pesando máximo 1000g = 1kg
   {
-    Serial.println("Fuera de rango de medición");
+    Serial.println("Fuera de rango de medición de masa");
   }
 //  else if (toma1 < 0) // su hay medidas negativas se ajusta la tara para corregirlas
 //  {
