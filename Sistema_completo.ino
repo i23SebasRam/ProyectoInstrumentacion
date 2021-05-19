@@ -74,7 +74,7 @@ float liquido = 0;
 
 //// Variables para el sensor de temperatura
 float temperature = 0;                                    // Variable for storing temperature measurements
-float SetUpTemp = 25.0;                                     // Variable for storing the Setup Temperature of the system
+float SetUpTemp = 25.0;                                   // Variable for storing the Setup Temperature of the system
 int waitRelay = 0;                                        // Variable for storing status of waiting for the relay operation
 float temperatura_actual;
 
@@ -181,7 +181,12 @@ void loop()
     }
   }
 
-  if (ID == 'L') // si se envía setpoint de líquido
+  if (ID == 'Q')
+  {
+    parado_emergencia();
+  }
+
+  else if (ID == 'L') // si se envía setpoint de líquido
   {
     masa_muestra = masa_actual;
     Serial.print("Para al dosificación, se tiene actualmente una muestra medida de: ");
@@ -256,7 +261,7 @@ void parado_emergencia()
   analogWrite(motor_pin, 0); // apaga motoboma
   stepper.disable(); // apaga el stepper
   digitalWrite(relay_pin, HIGH); // desactiva el calentador
-  delay(5000); // espera para desconectar o reiniciar el sistema
+  delay(10000); // espera para desconectar o reiniciar el sistema
 }
 
 
