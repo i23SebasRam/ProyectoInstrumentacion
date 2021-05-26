@@ -38,10 +38,10 @@
 #define MS3 12
 #define ENABLE 7
 // define el objeto del motor Stepper
-DRV8825 stepper(MOTOR_STEPS, DIR, STEP, ENABLE, MS1, MS2, MS3);
-
+#DRV8825 stepper(MOTOR_STEPS, DIR, STEP, ENABLE, MS1, MS2, MS3);
+DRV8825 stepper(MOTOR_STEPS, DIR, STEP)
 // Pines de conexión de los perifericos
-#define motor_pin 9   // pin pwm de la motobomba de líquido
+#define motor_pin 3   // pin pwm de la motobomba de líquido
 #define relay_pin 8   // pin de conexión del relé que controla el calentador         
 #define DS18B20_pin 6 // pin de conexion del sensor de temperatura    
 #define stopbutton_pin 2 // pin para interrupción por hardware
