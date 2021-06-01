@@ -2,7 +2,8 @@
 // libreria para lectura de la celda de carga
 #include <HX711.h>
 // libreria para manejo de motor paso a paso
-#include <DRV8825.h>
+//#include <DRV8825.h>
+#include "BasicStepperDriver.h"
 // libreria para el sensor de temperatura
 #include <DS18B20.h>
 
@@ -34,8 +35,8 @@
 #define DIR 8
 #define STEP 9
 // define el objeto del motor Stepper
-#DRV8825 stepper(MOTOR_STEPS, DIR, STEP);
-DRV8825 stepper(MOTOR_STEPS, DIR, STEP)
+BasicStepperDriver stepper(MOTOR_STEPS, DIR, STEP);
+
 // Pines de conexión de los perifericos
 #define motor_pin 3   // pin pwm de la motobomba de líquido
 #define relay_pin 12   // pin de conexión del relé que controla el calentador         
@@ -69,9 +70,9 @@ int vel_motobomba = 0; // variable para la velocidad de la moto bomba
 float liquido = 0;
 
 //// Variables para el sensor de temperatura
-float temperature = 0;                                 // Variable for storing temperature measurements
+float temperature = 0;                                    // Variable for storing temperature measurements
 float SetUpTemp = 0;                                   // Variable for storing the Setup Temperature of the system
-int waitRelay = 0;                                     // Variable for storing status of waiting for the relay operation
+int waitRelay = 0;                                        // Variable for storing status of waiting for the relay operation
 float temperatura_actual;
 
 //// Variables para motor paso a pas
@@ -208,11 +209,11 @@ void loop()
   else if (ID == 'T') // si se envía setpoint de temperatura
   {
     SetUpTemp = valor;
-    Serial.println("Se estableció setpoint de temperatura en: ");
+    Serial.println("Estableciendo nuevo setpoint de temperatura");
     Serial.println(valor);
   }
 
-  else if (ID == 'R') // si se envía setpoint de RPMs
+  else if (ID == 'R') // si se fija el setpoint de RPMs
   {
     stepper.setRPM(valor);
     RPM = valor;
@@ -229,17 +230,15 @@ void loop()
     tiempo_mezcla = valor;
     tiempo = millis();
     
-    stepper.enable();
     Serial.print("#t4");
     Serial.print(",");
     Serial.println("ON");
     
     while ((millis() - tiempo)*1000 < tiempo_mezcla)
     {
-      stepper.move(5);
+      stepper.move(20);
     }
     
-    stepper.disable();
     Serial.print("#t4");
     Serial.print(",");
     Serial.println("OFF");
@@ -254,7 +253,7 @@ void parado_emergencia()
 {
   // para apagar motobomba, stepper y calentador relay
   Serial.println("PARADO DE EMERGENCIA ACTIVADO");
-  analogWrite(motor_pin, 0); // apaga motoboma
+  analogWrite(motor_pin, 0); // apaga motobomba
   stepper.disable(); // apaga el stepper
   digitalWrite(relay_pin, HIGH); // desactiva el calentador
   delay(60000); // espera para desconectar o reiniciar el sistema
@@ -266,6 +265,7 @@ void control_onoff_temperatura(float temp_actual)
    if((temp_actual < SetUpTemp) && (waitRelay == 0) && SetUpTemp != 0)  // If the temp is less than the setup activate relay and story counting time
    {
       digitalWrite(relay_pin, LOW);               // Activate Relay
+      Serial.println("Activate Relay");
       // Activate timer
       Timer0 = millis(); 
       waitRelay = 1;
@@ -275,6 +275,8 @@ void control_onoff_temperatura(float temp_actual)
    if ((TimerRelay >= Timer0+(1000*TimeRelay)) && (waitRelay==1))  // if the time has concluded for the relay to be active
    {
       digitalWrite(relay_pin,HIGH);               // Deactivate Relay
+      Serial.print("Deactivate Relay, spent time (ms): ");
+      Serial.println(TimerRelay - Timer0);
       waitRelay = 0;
    }        
 }
@@ -291,7 +293,7 @@ float medir_temperatura_actual()
   } 
   else // The DS18B20 is not responding
   {
-    Serial.println("Error con sensor de temperatura");
+    Serial.println("Device DS18B20 not found!");
     delay(100);                         // wait a bit to see it working, remove after testing
     digitalWrite(relay_pin, HIGH);        // Turn off temperature as sensor is not responding
     temperature = 0;                      // Determine temperature as Zero to notify an error
@@ -309,7 +311,7 @@ float medir_masa_actual() // Función para medir masa con una sola escala calibr
 
   if (toma1 > 1000) // revisa que se esté pesando máximo 1000g = 1kg
   {
-    Serial.println("Fuera de rango de medición de masa");
+    Serial.println("Fuera de rango de medición");
   }
 //  else if (toma1 < 0) // su hay medidas negativas se ajusta la tara para corregirlas
 //  {
@@ -382,5 +384,3 @@ void calibracion(void) // Función para calibrar con 1 peso de referencia
 
   escala = masa_actual/masa_calibracion;      /*Asi se calcula la escala de la balanza para gramos, si quisieramos que la escala estuviera en kilogramos, se le ingresa el peso en kilogramos por la terminal*/  
 }
-
-
