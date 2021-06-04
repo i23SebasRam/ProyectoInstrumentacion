@@ -229,12 +229,14 @@ void loop()
     
     tiempo_mezcla = valor;
     tiempo = millis();
+
+    stepper.enable();
     
     Serial.print("#t4");
     Serial.print(",");
     Serial.println("ON");
     
-    while ((millis() - tiempo)*1000 < tiempo_mezcla)
+    while ((millis() - tiempo)/1000 < tiempo_mezcla)
     {
       stepper.move(20);
     }
@@ -332,13 +334,10 @@ void control_p_motobomba(float masa_Inicial) // Para control proporcional
 {
   float referencia = (volumen_liquido_deseado*densidad_liquido) + masa_muestra;
   float error = referencia - masa_Inicial; // Error = referencia - actual
-  Serial.print("El error actual del setpoint de líquido es: ");
-  Serial.print(error);
-  Serial.println(" g");
-
-  while (error > 5) // Maneja una velocidad de la motobomba proporcional al error
+  
+  while (error > 3) // Maneja una velocidad de la motobomba proporcional al error
   {
-    vel_motobomba = map(abs(error), 0, volumen_liquido_deseado, 50, 255);
+    vel_motobomba = map(abs(error), 0, volumen_liquido_deseado, 150, 255);
     analogWrite(motor_pin, vel_motobomba);
     
     masa_actual = medir_masa_actual();
@@ -349,10 +348,6 @@ void control_p_motobomba(float masa_Inicial) // Para control proporcional
     Serial.print("#t2");
     Serial.print(",");
     Serial.println(liquido);
-    
-    Serial.print("El error actual del setpoint de líquido es: ");
-    Serial.print(error);
-    Serial.println(" g");
   }
   
   analogWrite(motor_pin, 0);
